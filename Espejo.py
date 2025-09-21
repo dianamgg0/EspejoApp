@@ -7,35 +7,34 @@ st.set_page_config(page_title="✨ Espejito mágico ✨", page_icon="✨", layou
 st.markdown("""
     <style>
     .stApp {
-        background: url('https://www.transparenttextures.com/patterns/paper-fibers.png');
-        background-color: #fdfcf7; /* tono marfil claro */
-        color: #333;
+        background: linear-gradient(135deg, #1a1a1d, #2d2d34);
+        color: white;
         font-family: 'Georgia', serif;
     }
     .title {
         font-size: 36px;
         font-weight: bold;
-        color: #5a4635; /* marrón suave */
+        color: #f5f5dc;
         text-align: center;
-        text-shadow: 1px 1px 2px #ffffff;
+        text-shadow: 2px 2px 4px #000000;
     }
     .subtitle {
         font-size: 20px;
         font-style: italic;
-        color: #7a6f5a;
+        color: #E6E6FA;
         text-align: center;
         margin-top: -10px;
         margin-bottom: 20px;
+        text-shadow: 1px 1px 3px #000000;
     }
     /* Botón elegante */
     .stFileUploader {
-        background: linear-gradient(135deg, #fafafa, #f0f0f0);
+        background: linear-gradient(135deg, #faf9f6, #f0f0f0);
         border-radius: 15px;
         padding: 12px;
         font-weight: bold;
         text-align: center;
         color: #333;
-        border: 1px solid #ddd;
     }
     </style>
 """, unsafe_allow_html=True)
@@ -46,10 +45,10 @@ st.markdown('<div class="subtitle">Sube tu imagen y descubre tu revelación</div
 
 # --- Función para crear espejo vacío ---
 def crear_espejo_vacio():
-    img = Image.new("RGB", (500, 600), (253, 252, 247))  # fondo marfil
+    img = Image.new("RGB", (500, 600), (30, 30, 40))  # fondo oscuro
     draw = ImageDraw.Draw(img)
     bbox = [50, 50, 450, 550]  # marco ovalado
-    draw.ellipse(bbox, outline="#e8e6de", width=10)  # marco blanco hueso
+    draw.ellipse(bbox, outline="#f5f5dc", width=10)  # blanco hueso
     return img
 
 # Mostrar espejo vacío inicialmente
@@ -79,7 +78,7 @@ if uploaded_file:
     # Texto de revelación
     draw = ImageDraw.Draw(espejo)
     try:
-        font = ImageFont.truetype("arial.ttf", 28)
+        font = ImageFont.truetype("arial.ttf", 30)
     except:
         font = ImageFont.load_default()
 
@@ -87,8 +86,8 @@ if uploaded_file:
     text_w, text_h = draw.textbbox((0,0), frase, font=font)[2:]
     img_w, img_h = espejo.size
     x = (img_w - text_w) / 2
-    y = img_h - text_h - 20
-    draw.text((x, y), frase, font=font, fill="#5a4635", stroke_width=1, stroke_fill="#ffffff")
+    y = img_h - text_h - 15
+    draw.text((x, y), frase, font=font, fill="white", stroke_width=2, stroke_fill="black")
 
     st.image(espejo, caption="Aquí está tu reflejo ✨", use_column_width=True)
 else:
