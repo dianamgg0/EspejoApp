@@ -1,5 +1,5 @@
 import streamlit as st
-from PIL import Image, ImageDraw, ImageFont, ImageOps
+from PIL import Image, ImageDraw, ImageFont
 
 st.set_page_config(page_title="✨ Espejito mágico ✨", page_icon="✨", layout="centered")
 
@@ -15,7 +15,7 @@ st.markdown("""
     .title {
         font-size: 36px;
         font-weight: bold;
-        color: #5a4635;
+        color: #5a4635; /* marrón suave */
         text-align: center;
         text-shadow: 1px 1px 2px #ffffff;
     }
@@ -28,14 +28,14 @@ st.markdown("""
         margin-bottom: 20px;
     }
     /* Botón elegante */
-    .stFileUploader label div[data-testid="stFileUploaderDropzone"] {
-        background: linear-gradient(135deg, #fff8e7, #f2e1c6);
-        border-radius: 20px;
-        padding: 15px;
-        border: 2px solid #d4af37; /* dorado */
-        box-shadow: 2px 2px 8px rgba(0,0,0,0.15);
+    .stFileUploader {
+        background: linear-gradient(135deg, #fafafa, #f0f0f0);
+        border-radius: 15px;
+        padding: 12px;
         font-weight: bold;
-        color: #5a4635;
+        text-align: center;
+        color: #333;
+        border: 1px solid #ddd;
     }
     </style>
 """, unsafe_allow_html=True)
@@ -44,29 +44,12 @@ st.markdown("""
 st.markdown('<div class="title">✨ Espejito, espejito refleja mi divinidad ✨</div>', unsafe_allow_html=True)
 st.markdown('<div class="subtitle">Sube tu imagen y descubre tu revelación</div>', unsafe_allow_html=True)
 
-# --- Función para crear espejo vacío con marco dorado ---
+# --- Función para crear espejo vacío ---
 def crear_espejo_vacio():
     img = Image.new("RGB", (500, 600), (253, 252, 247))  # fondo marfil
     draw = ImageDraw.Draw(img)
-
-    bbox = [40, 40, 460, 560]  # marco ovalado
-
-    # Capa dorada (imitando realismo con varios anillos)
-    for i, color in enumerate(["#d4af37", "#f5deb3", "#d4af37"]):
-        offset = i * 4
-        draw.ellipse(
-            [bbox[0]-offset, bbox[1]-offset, bbox[2]+offset, bbox[3]+offset],
-            outline=color, width=6
-        )
-
-    # Textura dentro del óvalo (sutil)
-    interior = Image.new("RGB", (420, 520), "#fdfaf3")
-    texture = ImageOps.colorize(Image.new("L", (20, 20), 128), "#fefefe", "#eae4d3")
-    for y in range(0, interior.size[1], 20):
-        for x in range(0, interior.size[0], 20):
-            interior.paste(texture, (x, y))
-
-    img.paste(interior, (40, 40))
+    bbox = [50, 50, 450, 550]  # marco ovalado
+    draw.ellipse(bbox, outline="#e8e6de", width=10)  # marco blanco hueso
     return img
 
 # Mostrar espejo vacío inicialmente
@@ -78,12 +61,10 @@ uploaded_file = st.file_uploader("🪞 Sube tu imagen", type=["jpg", "jpeg", "pn
 if uploaded_file:
     st.session_state["inicial"] = False
     image = Image.open(uploaded_file).convert("RGBA")
-
-    # ✅ Mantener proporción al ajustar tamaño
-    image.thumbnail((400, 500), Image.LANCZOS)
+    image = image.resize((400, 500))  # redimensionar para el espejo
 
     # Crear máscara ovalada
-    mask = Image.new("L", (image.size[0], image.size[1]), 0)
+    mask = Image.new("L", image.size, 0)
     draw = ImageDraw.Draw(mask)
     draw.ellipse([0, 0, image.size[0], image.size[1]], fill=255)
 
@@ -93,11 +74,7 @@ if uploaded_file:
 
     # Crear fondo con marco
     espejo = crear_espejo_vacio().convert("RGBA")
-
-    # Centrar la imagen dentro del óvalo
-    x = (espejo.size[0] - image.size[0]) // 2
-    y = (espejo.size[1] - image.size[1]) // 2
-    espejo.paste(img_oval, (x, y), img_oval)
+    espejo.paste(img_oval, (50, 50), img_oval)
 
     # Texto de revelación
     draw = ImageDraw.Draw(espejo)
