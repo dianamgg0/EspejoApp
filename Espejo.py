@@ -1,5 +1,5 @@
 import streamlit as st
-from PIL import Image, ImageDraw, ImageFont
+from PIL import Image, ImageDraw, ImageFont, ImageOps
 
 st.set_page_config(page_title="✨ Espejito mágico ✨", page_icon="✨", layout="centered")
 
@@ -13,11 +13,11 @@ st.markdown("""
         font-family: 'Georgia', serif;
     }
     .title {
-        font-size: 38px;
+        font-size: 36px;
         font-weight: bold;
-        color: #5a4635; /* marrón suave */
+        color: #5a4635;
         text-align: center;
-        text-shadow: 1px 1px 3px #ffffff;
+        text-shadow: 1px 1px 2px #ffffff;
     }
     .subtitle {
         font-size: 20px;
@@ -28,15 +28,14 @@ st.markdown("""
         margin-bottom: 20px;
     }
     /* Botón elegante */
-    .stFileUploader {
-        background: linear-gradient(135deg, #ffffff, #f5f5f5);
-        border-radius: 15px;
-        padding: 12px;
+    .stFileUploader label div[data-testid="stFileUploaderDropzone"] {
+        background: linear-gradient(135deg, #fff8e7, #f2e1c6);
+        border-radius: 20px;
+        padding: 15px;
+        border: 2px solid #d4af37; /* dorado */
+        box-shadow: 2px 2px 8px rgba(0,0,0,0.15);
         font-weight: bold;
-        text-align: center;
-        color: #444;
-        border: 1px solid #ddd;
-        box-shadow: 2px 2px 6px rgba(0,0,0,0.08);
+        color: #5a4635;
     }
     </style>
 """, unsafe_allow_html=True)
@@ -45,16 +44,29 @@ st.markdown("""
 st.markdown('<div class="title">✨ Espejito, espejito refleja mi divinidad ✨</div>', unsafe_allow_html=True)
 st.markdown('<div class="subtitle">Sube tu imagen y descubre tu revelación</div>', unsafe_allow_html=True)
 
-# --- Función para crear espejo vacío con marco más realista ---
+# --- Función para crear espejo vacío con marco dorado ---
 def crear_espejo_vacio():
-    img = Image.new("RGB", (500, 650), (253, 252, 247))  # fondo marfil
+    img = Image.new("RGB", (500, 600), (253, 252, 247))  # fondo marfil
     draw = ImageDraw.Draw(img)
-    bbox = [40, 40, 460, 560]  # límites del óvalo
 
-    # Marco más elegante con grosor doble
-    draw.ellipse(bbox, outline="#e6e2d9", width=18)  # borde externo hueso
-    draw.ellipse([50, 50, 450, 550], outline="#f5f2eb", width=6)  # borde interno claro
+    bbox = [40, 40, 460, 560]  # marco ovalado
 
+    # Capa dorada (imitando realismo con varios anillos)
+    for i, color in enumerate(["#d4af37", "#f5deb3", "#d4af37"]):
+        offset = i * 4
+        draw.ellipse(
+            [bbox[0]-offset, bbox[1]-offset, bbox[2]+offset, bbox[3]+offset],
+            outline=color, width=6
+        )
+
+    # Textura dentro del óvalo (sutil)
+    interior = Image.new("RGB", (420, 520), "#fdfaf3")
+    texture = ImageOps.colorize(Image.new("L", (20, 20), 128), "#fefefe", "#eae4d3")
+    for y in range(0, interior.size[1], 20):
+        for x in range(0, interior.size[0], 20):
+            interior.paste(texture, (x, y))
+
+    img.paste(interior, (40, 40))
     return img
 
 # Mostrar espejo vacío inicialmente
@@ -67,12 +79,11 @@ if uploaded_file:
     st.session_state["inicial"] = False
     image = Image.open(uploaded_file).convert("RGBA")
 
-    # Ajustar tamaño conservando proporción (sin deformar)
-    max_width, max_height = 360, 480
-    image.thumbnail((max_width, max_height))
+    # ✅ Mantener proporción al ajustar tamaño
+    image.thumbnail((400, 500), Image.LANCZOS)
 
     # Crear máscara ovalada
-    mask = Image.new("L", image.size, 0)
+    mask = Image.new("L", (image.size[0], image.size[1]), 0)
     draw = ImageDraw.Draw(mask)
     draw.ellipse([0, 0, image.size[0], image.size[1]], fill=255)
 
@@ -82,14 +93,16 @@ if uploaded_file:
 
     # Crear fondo con marco
     espejo = crear_espejo_vacio().convert("RGBA")
-    x_offset = (espejo.size[0] - image.size[0]) // 2
-    y_offset = (espejo.size[1] - image.size[1]) // 2 - 20
-    espejo.paste(img_oval, (x_offset, y_offset), img_oval)
+
+    # Centrar la imagen dentro del óvalo
+    x = (espejo.size[0] - image.size[0]) // 2
+    y = (espejo.size[1] - image.size[1]) // 2
+    espejo.paste(img_oval, (x, y), img_oval)
 
     # Texto de revelación
     draw = ImageDraw.Draw(espejo)
     try:
-        font = ImageFont.truetype("DejaVuSerif-Italic.ttf", 28)
+        font = ImageFont.truetype("arial.ttf", 28)
     except:
         font = ImageFont.load_default()
 
