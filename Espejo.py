@@ -2,79 +2,90 @@ import streamlit as st
 from PIL import Image, ImageDraw, ImageFont, ImageFilter
 import random
 import io
-import numpy as np
 
-# --- Configuración de la página ---
-st.set_page_config(page_title="Espejito App", page_icon="🪞", layout="centered")
+# --- Fondo de la app ---
+page_bg = """
+<style>
+[data-testid="stAppViewContainer"] {
+    background-color: #f5f0e6;
+    background-image: url("https://www.transparenttextures.com/patterns/paper-fibers.png");
+    background-size: cover;
+}
+</style>
+"""
+st.markdown(page_bg, unsafe_allow_html=True)
 
-# --- Título ---
-st.title("✨ Espejito, espejito refleja mi divinidad ✨")
+# --- Título elegante ---
+st.markdown(
+    """
+    <h1 style='text-align: center; 
+               font-family: "Georgia", "Times New Roman", serif; 
+               font-style: italic; 
+               font-size: 42px; 
+               color: #4b3832;'>
+        ✨ Espejito, espejito refleja mi divinidad ✨
+    </h1>
+    """,
+    unsafe_allow_html=True
+)
 
-# --- Lista de frases ---
+st.write("### Sube tu imagen y descubre tu revelación")
+
+# --- Frases ---
 frases = [
     "No busques tu sonrisa en mis reflejos… yo ya la veo florecer dentro de ti.",
-    "Eres más radiante de lo que imaginas.",
-    "Tu luz interior ilumina más que mil soles.",
-    "En ti ya habita la belleza que buscas.",
-    "Tu esencia brilla en cada reflejo.",
-    "El amor propio es tu espejo más fiel.",
-    "Tu divinidad se revela en tu mirada.",
-    "La magia que ves afuera nace en tu interior.",
-    "Eres un reflejo perfecto de la creación.",
-    "Dentro de ti ya florece todo lo que necesitas."
+    "En cada mirada descubres la luz que siempre ha estado en tu interior.",
+    "El reflejo es solo un eco de tu verdadera esencia.",
+    "Tus ojos ya saben el secreto que tu corazón susurra.",
+    "El espejo no inventa, solo te recuerda quién eres.",
+    "Tu divinidad brilla más allá de cualquier reflejo.",
+    "El misterio que buscas ya habita en ti.",
+    "La paz que anhelas se refleja en tu propia mirada.",
+    "El espejo te sonríe porque reconoce tu luz.",
+    "Dentro de ti florece el jardín de tu verdad."
 ]
 
 # --- Subir imagen ---
-uploaded_file = st.file_uploader("Sube tu imagen y descubre tu revelación", type=["jpg", "png", "jpeg"])
+uploaded_file = st.file_uploader("Sube tu imagen", type=["jpg", "jpeg", "png"])
 
 if uploaded_file is not None:
-    # Cargar imagen
-    image = Image.open(uploaded_file).convert("RGBA")
+    imagen = Image.open(uploaded_file).convert("RGB")
 
-    # Aplicar un filtro suave
-    image = image.filter(ImageFilter.SMOOTH_MORE)
+    # --- Filtro suave ---
+    imagen = imagen.filter(ImageFilter.SMOOTH)
 
-    # Crear fondo beige con textura ligera
-    bg_w, bg_h = image.width + 200, image.height + 300
-    beige = np.ones((bg_h, bg_w, 3), dtype=np.uint8) * [235, 225, 210]  # Beige claro
-    noise = np.random.normal(0, 8, beige.shape).astype(np.int16)
-    textured = np.clip(beige + noise, 0, 255).astype(np.uint8)
-    background = Image.fromarray(textured, "RGB").convert("RGBA")
+    # --- Redimensionar ---
+    imagen = imagen.resize((500, 600))
 
-    # Crear marco blanco simple
-    marco = Image.new("RGBA", (image.width + 40, image.height + 40), (255, 255, 255, 255))
-    marco.paste(image, (20, 20), image)
+    # --- Fondo beige con textura ---
+    fondo = Image.new("RGB", (600, 800), (245, 240, 230))
 
-    # Pegar marco en el centro del fondo
-    x = (bg_w - marco.width) // 2
-    y = 60
-    background.paste(marco, (x, y), marco)
+    # --- Pegar foto ---
+    fondo.paste(imagen, (50, 80))
 
-    # Seleccionar una frase aleatoria
+    # --- Dibujar marco ---
+    draw = ImageDraw.Draw(fondo)
+    draw.rectangle([(45, 75), (555, 685)], outline=(90, 70, 60), width=8)
+
+    # --- Frase aleatoria ---
     frase = random.choice(frases)
+    font = ImageFont.truetype("DejaVuSerif-Italic.ttf", 22)
 
-    # Dibujar texto
-    draw = ImageDraw.Draw(background)
-    try:
-        font = ImageFont.truetype("arial.ttf", 36)  # Windows
-    except:
-        font = ImageFont.load_default()
+    # Centrar frase
+    text_w, text_h = draw.textbbox((0, 0), frase, font=font)[2:]
+    x = (600 - text_w) // 2
+    y = 720
+    draw.text((x, y), frase, fill=(60, 45, 40), font=font)
 
-    text_w, text_h = draw.textsize(frase, font=font)
-    text_x = (background.width - text_w) // 2
-    text_y = y + marco.height + 40
-    draw.text((text_x, text_y), frase, font=font, fill=(60, 50, 40, 255))
+    # --- Mostrar imagen ---
+    st.image(fondo, caption="✨ Tu revelación ✨", use_column_width=True)
 
-    # Mostrar imagen final
-    st.image(background, caption="✨ Tu revelación ✨", use_column_width=True)
-
-    # Descargar imagen como botón
+    # --- Descargar imagen ---
     buf = io.BytesIO()
-    background.save(buf, format="PNG")
+    fondo.save(buf, format="PNG")
     byte_im = buf.getvalue()
-
     st.download_button(
-        label="📥 Descargar tu revelación",
+        label="📥 Descargar tu post",
         data=byte_im,
         file_name="revelacion.png",
         mime="image/png"
