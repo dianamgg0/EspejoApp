@@ -1,96 +1,104 @@
 import streamlit as st
-from PIL import Image, ImageDraw, ImageFont
+from PIL import Image, ImageOps, ImageDraw, ImageFont
+import random
+import io
 
-st.set_page_config(page_title="✨ Espejito mágico ✨", page_icon="✨", layout="centered")
+# Lista de frases
+FRASES = [
+    "Tu divinidad brilla ✨",
+    "El reflejo eres tú 🌸",
+    "La luz que buscas ya habita en ti 💫",
+    "Tu sonrisa interior florece 🌼",
+    "El espejo canta tu verdad 🎶",
+    "Eres belleza en cada reflejo 🌹",
+    "Tu ser irradia armonía 🌟",
+    "Eres más de lo que ves 🪞",
+    "Dentro de ti todo ya existe 🌙",
+    "Tu esencia ilumina el espejo 🔮"
+]
 
-# CSS personalizado
+# Configuración de la app
+st.set_page_config(page_title="Espejito", page_icon="✨", layout="centered")
+
+# Fondo beige con estilo
 st.markdown("""
     <style>
-    .stApp {
-        background: url('https://www.transparenttextures.com/patterns/paper-fibers.png');
-        background-color: #fdfcf7; /* tono marfil claro */
-        color: #333;
-        font-family: 'Georgia', serif;
-    }
-    .title {
-        font-size: 36px;
-        font-weight: bold;
-        color: #5a4635; /* marrón suave */
-        text-align: center;
-        text-shadow: 1px 1px 2px #ffffff;
-    }
-    .subtitle {
-        font-size: 20px;
-        font-style: italic;
-        color: #7a6f5a;
-        text-align: center;
-        margin-top: -10px;
-        margin-bottom: 20px;
-    }
-    /* Botón elegante */
-    .stFileUploader {
-        background: linear-gradient(135deg, #fafafa, #f0f0f0);
-        border-radius: 15px;
-        padding: 12px;
-        font-weight: bold;
-        text-align: center;
-        color: #333;
-        border: 1px solid #ddd;
-    }
+        body {
+            background-color: #f9f5f0;
+        }
+        .stButton>button {
+            background-color: #e6dacd;
+            color: #3e2f2f;
+            border: none;
+            border-radius: 12px;
+            padding: 0.6em 1.2em;
+            font-size: 1em;
+            font-weight: bold;
+            cursor: pointer;
+            transition: 0.3s;
+        }
+        .stButton>button:hover {
+            background-color: #d8c7b8;
+        }
     </style>
 """, unsafe_allow_html=True)
 
-# Encabezado
-st.markdown('<div class="title">✨ Espejito, espejito refleja mi divinidad ✨</div>', unsafe_allow_html=True)
-st.markdown('<div class="subtitle">Sube tu imagen y descubre tu revelación</div>', unsafe_allow_html=True)
+# Título elegante
+st.markdown("<h1 style='text-align: center; color:#3e2f2f;'>✨ Espejito, espejito refleja mi divinidad ✨</h1>", unsafe_allow_html=True)
+st.markdown("<p style='text-align: center; color:#6e5d4c; font-style: italic;'>Sube tu imagen y descubre tu revelación</p>", unsafe_allow_html=True)
 
-# --- Función para crear espejo vacío ---
-def crear_espejo_vacio():
-    img = Image.new("RGB", (500, 600), (253, 252, 247))  # fondo marfil
-    draw = ImageDraw.Draw(img)
-    bbox = [50, 50, 450, 550]  # marco ovalado
-    draw.ellipse(bbox, outline="#e8e6de", width=10)  # marco blanco hueso
-    return img
+# Subida de imagen
+uploaded_file = st.file_uploader("📂 Sube tu imagen", type=["jpg", "jpeg", "png"])
 
-# Mostrar espejo vacío inicialmente
-if "inicial" not in st.session_state:
-    st.session_state["inicial"] = True
+# Marco PNG elegante (debe estar en la carpeta del proyecto con fondo transparente)
+try:
+    marco = Image.open("marco.png").convert("RGBA")
+except:
+    marco = None
+    st.warning("⚠️ No se encontró el archivo 'marco.png'. Cárgalo en la carpeta del proyecto.")
 
-uploaded_file = st.file_uploader("🪞 Sube tu imagen", type=["jpg", "jpeg", "png"])
-
-if uploaded_file:
-    st.session_state["inicial"] = False
-    image = Image.open(uploaded_file).convert("RGBA")
-    image = image.resize((400, 500))  # redimensionar para el espejo
+if uploaded_file is not None:
+    # Abrir y preparar imagen subida
+    user_img = Image.open(uploaded_file).convert("RGBA")
+    user_img.thumbnail((800, 800), Image.LANCZOS)  # Mantener proporciones
 
     # Crear máscara ovalada
-    mask = Image.new("L", image.size, 0)
+    mask = Image.new("L", user_img.size, 0)
     draw = ImageDraw.Draw(mask)
-    draw.ellipse([0, 0, image.size[0], image.size[1]], fill=255)
+    draw.ellipse([(0, 0), user_img.size], fill=255)
+    user_img = ImageOps.fit(user_img, user_img.size, centering=(0.5, 0.5))
+    user_img.putalpha(mask)
 
-    # Recortar imagen en forma ovalada
-    img_oval = Image.new("RGBA", image.size)
-    img_oval.paste(image, (0, 0), mask=mask)
+    # Crear lienzo beige con textura ligera
+    bg = Image.new("RGBA", (1000, 1200), (249, 245, 240, 255))
 
-    # Crear fondo con marco
-    espejo = crear_espejo_vacio().convert("RGBA")
-    espejo.paste(img_oval, (50, 50), img_oval)
+    # Insertar imagen centrada
+    user_pos = ((bg.width - user_img.width) // 2, 250)
+    bg.paste(user_img, user_pos, user_img)
 
-    # Texto de revelación
-    draw = ImageDraw.Draw(espejo)
-    try:
-        font = ImageFont.truetype("arial.ttf", 28)
-    except:
-        font = ImageFont.load_default()
+    # Colocar marco si existe
+    if marco:
+        marco_resized = marco.resize((user_img.width+80, user_img.height+80), Image.LANCZOS)
+        marco_pos = ((bg.width - marco_resized.width) // 2, 240)
+        bg.paste(marco_resized, marco_pos, marco_resized)
 
-    frase = "✨ Tu divinidad brilla ✨"
-    text_w, text_h = draw.textbbox((0,0), frase, font=font)[2:]
-    img_w, img_h = espejo.size
-    x = (img_w - text_w) / 2
-    y = img_h - text_h - 20
-    draw.text((x, y), frase, font=font, fill="#5a4635", stroke_width=1, stroke_fill="#ffffff")
+    # Elegir frase aleatoria
+    frase = random.choice(FRASES)
 
-    st.image(espejo, caption="Aquí está tu reflejo ✨", use_column_width=True)
+    # Escribir frase elegante
+    draw = ImageDraw.Draw(bg)
+    font = ImageFont.truetype("DejaVuSerif-Italic.ttf", 32)
+    text_w, text_h = draw.textbbox((0, 0), frase, font=font)[2:]
+    draw.text(((bg.width - text_w) // 2, 1100), frase, font=font, fill="#3e2f2f")
+
+    # Mostrar resultado
+    st.image(bg, use_container_width=True)
+
+    # Botón de descarga
+    buf = io.BytesIO()
+    bg.save(buf, format="PNG")
+    byte_im = buf.getvalue()
+    st.download_button("⬇️ Descargar mi post", data=byte_im, file_name="espejito.png", mime="image/png")
+
 else:
-    espejo_vacio = crear_espejo_vacio()
-    st.image(espejo_vacio, caption="Tu espejo mágico te espera 🪞", use_column_width=True)
+    st.info("✨ Sube una imagen para ver tu reflejo ✨")
